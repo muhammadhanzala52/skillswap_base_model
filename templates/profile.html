@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SkillSwap - Profile</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .nav { background: #f4f4f4; padding: 10px; margin-bottom: 20px; }
+        .nav a { margin-right: 15px; text-decoration: none; color: #333; }
+        .section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .skills-list { margin: 10px 0; }
+        .skill-item { background: #f8f9fa; padding: 8px; margin: 5px 0; border-radius: 3px; }
+        .btn { background: #007bff; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 3px; }
+        input, select, textarea { padding: 6px; border: 1px solid #ddd; border-radius: 4px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/profile-page?email={{ email }}">My Profile</a>
+        <a href="/matches-page?email={{ email }}">My Matches</a>
+        <a href="/login-page" style="float: right;">Logout</a>
+    </div>
+
+    <h2>My SkillSwap Profile</h2>
+    <p>Welcome! Manage your skills and find learning partners.</p>
+
+    <!-- Add Skills Form -->
+    <div class="section">
+        <h3>Add New Skills</h3>
+        <form method="post" action="/add-skill-frontend">
+            <input type="hidden" name="email" value="{{ email }}">
+            
+            <div class="form-group">
+                <label>Skill Type:</label>
+                <select name="skill_type" required>
+                    <option value="offer">I can teach this</option>
+                    <option value="request">I want to learn this</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Skill Name:</label>
+                <input type="text" name="skill_name" placeholder="e.g., Python, Guitar, Cooking" required>
+            </div>
+
+            <div class="form-group">
+                <label>Skill Level (if teaching):</label>
+                <select name="skill_level">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate" selected>Intermediate</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Description (if learning):</label>
+                <textarea name="description" placeholder="What do you want to learn?" rows="2" cols="40"></textarea>
+            </div>
+
+            <button type="submit" class="btn">Add Skill</button>
+        </form>
+    </div>
+
+    <!-- Current Skills Display -->
+    <div class="section">
+        <h3>My Current Skills</h3>
+        
+        <h4>Skills I Can Teach:</h4>
+        <div id="offered-skills" class="skills-list">
+            <em>Loading...</em>
+        </div>
+
+        <h4>Skills I Want to Learn:</h4>
+        <div id="needed-skills" class="skills-list">
+            <em>Loading...</em>
+        </div>
+    </div>
+
+    <script>
+        // Load user skills - FIXED ENDPOINT
+        const email = "{{ email }}";
+        
+        fetch(`/users/${email}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('User not found');
+                }
+                return response.json();
+            })
+            .then(user => {
+                console.log('User data:', user); // Debug log
+                
+                // Display offered skills
+                const offeredDiv = document.getElementById('offered-skills');
+                if (user.skills_offered && user.skills_offered.length > 0) {
+                    offeredDiv.innerHTML = user.skills_offered.map(skill => 
+                        `<div class="skill-item">${skill.skill_name} (${skill.skill_level})</div>`
+                    ).join('');
+                } else {
+                    offeredDiv.innerHTML = '<em>No skills added yet</em>';
+                }
+
+                // Display needed skills
+                const neededDiv = document.getElementById('needed-skills');
+                if (user.skills_needed && user.skills_needed.length > 0) {
+                    neededDiv.innerHTML = user.skills_needed.map(skill => 
+                        `<div class="skill-item">${skill.skill_name} - ${skill.description || 'No description'}</div>`
+                    ).join('');
+                } else {
+                    neededDiv.innerHTML = '<em>No skills requested yet</em>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading skills:', error);
+                document.getElementById('offered-skills').innerHTML = '<em>Error loading skills: ' + error.message + '</em>';
+                document.getElementById('needed-skills').innerHTML = '<em>Error loading skills</em>';
+            });
+    </script>
+</body>
+</html>
