@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 # This defines what data we expect when creating a user
 class UserCreate(BaseModel):
@@ -53,3 +54,27 @@ class UserWithSkillsResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class MessageCreate(BaseModel):
+    receiver_email: str
+    content: str
+
+class MessageResponse(BaseModel):
+    id: int
+    sender_name: str
+    sender_email: str
+    receiver_name: str
+    receiver_email: str
+    content: str
+    timestamp: datetime
+    is_read: bool
+    
+    class Config:
+        from_attributes = True
+
+class ConversationResponse(BaseModel):
+    other_user_name: str
+    other_user_email: str
+    last_message: Optional[str]
+    last_message_time: Optional[datetime]
+    unread_count: int = 0

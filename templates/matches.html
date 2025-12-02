@@ -4,23 +4,48 @@
     <title>SkillSwap - Matches</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .nav { background: #f4f4f4; padding: 10px; margin-bottom: 20px; }
-        .nav a { margin-right: 15px; text-decoration: none; color: #333; }
-        .match-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
-        .match-teach { border-left: 4px solid #28a745; }
-        .match-learn { border-left: 4px solid #007bff; }
-        .btn { background: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; }
+        .match-card { 
+            border: 1px solid #ddd; 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 8px;
+            background: white;
+        }
+        .match-teach { 
+            border-left: 5px solid #28a745; 
+            background: linear-gradient(to right, #f8fff8, white);
+        }
+        .match-learn { 
+            border-left: 5px solid #007bff; 
+            background: linear-gradient(to right, #f8f9ff, white);
+        }
+        .btn-contact { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .btn-contact:hover { 
+            background: #0056b3; 
+        }
+        .no-matches {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <div class="nav">
-        <a href="/">Home</a>
-        <a href="/profile-page?email={{ email }}">My Profile</a>
-        <a href="/matches-page?email={{ email }}">My Matches</a>
-        <a href="/login-page" style="float: right;">Logout</a>
-    </div>
+    <!-- Include Navigation -->
+    {% include "nav.html" %}
 
-    <h2>My Skill Matches</h2>
+    <h2>My Skill Matches 🔍</h2>
     <p>Find people to learn from and teach!</p>
 
     <div id="matches-container">
@@ -28,10 +53,10 @@
     </div>
 
     <script>
-        const email = "{{ email }}";
+        const userEmail = "{{ email }}";
         
-        // FIXED ENDPOINT
-        fetch(`/users/${email}/matches`)
+        // Load matches
+        fetch(`/users/${userEmail}/matches`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Failed to load matches');
@@ -39,34 +64,46 @@
                 return response.json();
             })
             .then(data => {
-                console.log('Matches data:', data); // Debug log
                 const container = document.getElementById('matches-container');
                 
                 if (data.matches_found === 0) {
-                    container.innerHTML = '<p>No matches found yet. Add more skills to your profile!</p>';
+                    container.innerHTML = `
+                        <div class="no-matches">
+                            <h3>No matches found yet 😔</h3>
+                            <p>Add more skills to your profile to find learning partners!</p>
+                            <a href="/profile-page?email=${userEmail}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+                                Add More Skills
+                            </a>
+                        </div>
+                    `;
                     return;
                 }
 
-                let html = `<p>Found ${data.matches_found} potential matches:</p>`;
+                let html = `<p style="color: #666; margin-bottom: 20px;">Found ${data.matches_found} potential matches:</p>`;
                 
                 data.matches.forEach(match => {
                     if (match.match_type === 'you_can_teach') {
                         html += `
                             <div class="match-card match-teach">
-                                <h4>🎯 You can teach: ${match.your_skill}</h4>
-                                <p><strong>Student:</strong> ${match.matched_user.name} (${match.matched_user.email})</p>
-                                <p><strong>They want:</strong> ${match.their_request}</p>
-                                <button class="btn">Contact to Teach</button>
+                                <h4>🎯 You can teach: <strong>${match.your_skill}</strong></h4>
+                                <p><strong>👤 Student:</strong> ${match.matched_user.name}</p>
+                                <p><strong>📖 They want to learn:</strong> ${match.their_request || 'No specific request'}</p>
+                                <p><strong>🎓 Your skill level:</strong> ${match.their_skill_level}</p>
+                                <a href="/messages-page?email=${userEmail}&start_with=${encodeURIComponent(match.matched_user.email)}" class="btn-contact">
+                                    💬 Contact to Teach
+                                </a>
                             </div>
                         `;
                     } else {
                         html += `
                             <div class="match-card match-learn">
-                                <h4>📚 You can learn: ${match.skill_you_need}</h4>
-                                <p><strong>Teacher:</strong> ${match.matched_user.name} (${match.matched_user.email})</p>
-                                <p><strong>They offer:</strong> ${match.their_offer}</p>
-                                <p><strong>Skill level:</strong> ${match.their_skill_level}</p>
-                                <button class="btn">Contact to Learn</button>
+                                <h4>📚 You can learn: <strong>${match.skill_you_need}</strong></h4>
+                                <p><strong>👤 Teacher:</strong> ${match.matched_user.name}</p>
+                                <p><strong>💡 They offer:</strong> ${match.their_offer}</p>
+                                <p><strong>🎓 Their skill level:</strong> ${match.their_skill_level}</p>
+                                <a href="/messages-page?email=${userEmail}&start_with=${match.matched_user.email}" class="btn-contact">
+                                    💬 Contact to Learn
+                                </a>
                             </div>
                         `;
                     }
@@ -76,7 +113,11 @@
             })
             .catch(error => {
                 console.error('Error loading matches:', error);
-                document.getElementById('matches-container').innerHTML = '<em>Error loading matches: ' + error.message + '</em>';
+                document.getElementById('matches-container').innerHTML = `
+                    <div style="color: red; padding: 20px; background: #ffe6e6; border-radius: 5px;">
+                        Error loading matches: ${error.message}
+                    </div>
+                `;
             });
     </script>
 </body>

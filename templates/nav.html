@@ -1,0 +1,13 @@
+<div style="background: #4a6fa5; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+    <a href="/" style="color: white; margin-right: 20px; text-decoration: none; font-weight: bold;">🏠 Home</a>
+    
+    {% if email %}
+        <a href="/profile-page?email={{ email }}" style="color: white; margin-right: 20px; text-decoration: none; font-weight: bold;">👤 Profile</a>
+        <a href="/matches-page?email={{ email }}" style="color: white; margin-right: 20px; text-decoration: none; font-weight: bold;">🔍 Matches</a>
+        <a href="/messages-page?email={{ email }}" style="color: white; margin-right: 20px; text-decoration: none; font-weight: bold;">💬 Messages</a>
+        <a href="/login-page" style="color: white; float: right; text-decoration: none;">Logout</a>
+    {% else %}
+        <a href="/login-page" style="color: white; margin-right: 20px; text-decoration: none; font-weight: bold;">🔑 Login</a>
+        <a href="/register-page" style="color: white; margin-right: 20px; text-decoration: none; font-weight: bold;">📝 Register</a>
+    {% endif %}
+</div>

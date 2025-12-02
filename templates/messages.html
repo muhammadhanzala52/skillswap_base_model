@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SkillSwap - Messages</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .nav { 
+            background: #4a6fa5; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border-radius: 5px;
+        }
+        .nav a { 
+            color: white; 
+            margin-right: 20px; 
+            text-decoration: none; 
+            font-weight: bold; 
+        }
+        .conversations { 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            background: white;
+        }
+        .conversation-item { 
+            padding: 10px; 
+            border-bottom: 1px solid #eee; 
+            cursor: pointer; 
+        }
+        .conversation-item:hover { 
+            background: #f5f5f5; 
+        }
+        .conversation-item.active { 
+            background: #e3f2fd; 
+        }
+        .messages-area { 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            padding: 20px; 
+            background: white;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .message { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 8px; 
+            max-width: 80%; 
+        }
+        .message.sent { 
+            background: #007bff; 
+            color: white; 
+            margin-left: auto; 
+        }
+        .message.received { 
+            background: #f0f0f0; 
+            margin-right: auto; 
+        }
+        .message-input { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            margin-bottom: 10px; 
+        }
+        .send-btn { 
+            background: #28a745; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        .error { 
+            color: red; 
+            padding: 10px; 
+            background: #ffe6e6; 
+            border-radius: 5px; 
+            margin-bottom: 10px; 
+        }
+        .loading { 
+            color: #666; 
+            text-align: center; 
+            padding: 20px; 
+        }
+    </style>
+</head>
+<body>
+    <!-- Simple Navigation -->
+    <div class="nav">
+        <a href="/">🏠 Home</a>
+        <a href="/profile-page?email={{ email }}">👤 Profile</a>
+        <a href="/matches-page?email={{ email }}">🔍 Matches</a>
+        <a href="/messages-page?email={{ email }}">💬 Messages</a>
+        <a href="/login-page" style="float: right;">Logout ({{ email }})</a>
+    </div>
+
+    <h2>Messages 💬</h2>
+
+    <div class="conversations">
+        <h3>Conversations</h3>
+        <div id="conversations-list">
+            <div class="loading">Loading conversations...</div>
+        </div>
+    </div>
+
+    <div id="chat-area" style="display: none;">
+        <div class="messages-area" id="messages-container">
+            <div class="loading">Select a conversation to see messages</div>
+        </div>
+        
+        <div>
+            <textarea id="message-input" class="message-input" placeholder="Type your message here..." rows="3"></textarea>
+            <button onclick="sendMessage()" class="send-btn">Send Message</button>
+        </div>
+    </div>
+
+    <script>
+        const userEmail = "{{ email }}";
+        const urlParams = new URLSearchParams(window.location.search);
+        const startWithEmail = urlParams.get('start_with');
+        let selectedConversation = null;
+        
+        // Load conversations
+        function loadConversations() {
+            console.log('Loading conversations for:', userEmail);
+            
+            fetch(`/messages/${userEmail}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(messages => {
+                    console.log('Messages received:', messages);
+                    
+                    // Group messages by other user
+                    const conversations = {};
+                    messages.forEach(msg => {
+                        const otherUserEmail = msg.sender_email === userEmail ? msg.receiver_email : msg.sender_email;
+                        const otherUserName = msg.sender_email === userEmail ? msg.receiver_name : msg.sender_name;
+                        
+                        if (!conversations[otherUserEmail]) {
+                            conversations[otherUserEmail] = {
+                                name: otherUserName || otherUserEmail.split('@')[0],
+                                email: otherUserEmail,
+                                lastMessage: msg.content,
+                                lastTime: new Date(msg.timestamp),
+                                unreadCount: 0
+                            };
+                        }
+                        
+                        const conv = conversations[otherUserEmail];
+                        const msgTime = new Date(msg.timestamp);
+                        if (msgTime > conv.lastTime) {
+                            conv.lastMessage = msg.content;
+                            conv.lastTime = msgTime;
+                        }
+                        
+                        // Count unread messages
+                        if (msg.receiver_email === userEmail && !msg.is_read) {
+                            conv.unreadCount++;
+                        }
+                    });
+                    
+                    // Display conversations
+                    const container = document.getElementById('conversations-list');
+                    
+                    if (Object.keys(conversations).length === 0) {
+                        container.innerHTML = '<div style="color: #666; padding: 20px; text-align: center;">No conversations yet. Find matches to start messaging!</div>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    Object.values(conversations).sort((a, b) => b.lastTime - a.lastTime).forEach(conv => {
+                        const timeStr = conv.lastTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const isActive = selectedConversation && selectedConversation.email === conv.email;
+                        
+                        html += `
+                            <div class="conversation-item ${isActive ? 'active' : ''}" 
+                                 onclick="selectConversation('${conv.email}', '${conv.name}')">
+                                <strong>${conv.name}</strong>
+                                <div style="font-size: 14px; color: #666; margin-top: 5px;">
+                                    ${conv.lastMessage.substring(0, 50)}${conv.lastMessage.length > 50 ? '...' : ''}
+                                </div>
+                                <div style="font-size: 12px; color: #999; margin-top: 5px;">
+                                    ${timeStr}
+                                    ${conv.unreadCount > 0 ? `<span style="background: #ff4757; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px;">${conv.unreadCount}</span>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                    
+                    // Auto-select if start_with parameter exists
+                    if (startWithEmail) {
+                        if (conversations[startWithEmail]) {
+                            selectConversation(startWithEmail, conversations[startWithEmail].name);
+                        } else {
+                            // Start new conversation
+                            selectConversation(startWithEmail, startWithEmail.split('@')[0]);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading conversations:', error);
+                    document.getElementById('conversations-list').innerHTML = 
+                        `<div class="error">Error loading conversations: ${error.message}</div>`;
+                });
+        }
+        
+        // Select conversation
+        function selectConversation(otherEmail, otherName) {
+            console.log('Selecting conversation with:', otherEmail, otherName);
+            
+            selectedConversation = {
+                email: otherEmail,
+                name: otherName
+            };
+            
+            // Update UI
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Mark active if conversation exists in list
+            const items = document.querySelectorAll('.conversation-item');
+            for (let item of items) {
+                if (item.textContent.includes(otherEmail)) {
+                    item.classList.add('active');
+                    break;
+                }
+            }
+            
+            // Show chat area
+            document.getElementById('chat-area').style.display = 'block';
+            
+            // Load conversation messages
+            loadConversationMessages(otherEmail);
+            
+            // Focus on message input
+            document.getElementById('message-input').focus();
+        }
+        
+        // Load conversation messages
+        function loadConversationMessages(otherEmail) {
+            console.log('Loading conversation with:', otherEmail);
+            
+            document.getElementById('messages-container').innerHTML = '<div class="loading">Loading messages...</div>';
+            
+            fetch(`/messages/conversation/${userEmail}/${otherEmail}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load conversation: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(messages => {
+                    console.log('Conversation messages:', messages);
+                    
+                    const container = document.getElementById('messages-container');
+                    
+                    if (messages.length === 0) {
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 40px; color: #666;">
+                                <h4>No messages yet</h4>
+                                <p>Start the conversation with ${selectedConversation.name}!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    let html = `<h4 style="margin-bottom: 20px;">Conversation with ${selectedConversation.name}</h4>`;
+                    
+                    messages.forEach(msg => {
+                        const isSent = msg.sender_email === userEmail;
+                        const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const senderName = isSent ? 'You' : (msg.sender_name || msg.sender_email.split('@')[0]);
+                        
+                        html += `
+                            <div class="message ${isSent ? 'sent' : 'received'}">
+                                <div><strong>${senderName}</strong></div>
+                                <div style="margin: 5px 0;">${msg.content}</div>
+                                <div style="font-size: 12px; opacity: 0.8;">${time}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                    
+                    // Scroll to bottom
+                    container.scrollTop = container.scrollHeight;
+                    
+                    // Mark messages as read
+                    fetch(`/messages/mark-read/${userEmail}/${otherEmail}`, { 
+                        method: 'POST' 
+                    }).then(() => {
+                        // Reload conversations to update unread count
+                        setTimeout(loadConversations, 500);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading conversation messages:', error);
+                    document.getElementById('messages-container').innerHTML = 
+                        `<div class="error">Error loading messages: ${error.message}</div>`;
+                });
+        }
+        
+        // Send message
+        function sendMessage() {
+            if (!selectedConversation) {
+                alert('Please select a conversation first');
+                return;
+            }
+            
+            const messageInput = document.getElementById('message-input');
+            const content = messageInput.value.trim();
+            
+            if (!content) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            const messageData = {
+                receiver_email: selectedConversation.email,
+                content: content
+            };
+            
+            console.log('Sending message:', messageData);
+            
+            fetch(`/messages/send?sender_email=${userEmail}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(messageData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Failed to send message: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Message sent successfully:', data);
+                
+                // Clear input
+                messageInput.value = '';
+                
+                // Reload conversation messages
+                loadConversationMessages(selectedConversation.email);
+                
+                // Reload conversations list
+                setTimeout(loadConversations, 500);
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                alert('Error sending message: ' + error.message);
+            });
+        }
+        
+        // Initialize
+        loadConversations();
+        
+        // Allow Enter to send message (but allow Shift+Enter for new line)
+        document.getElementById('message-input')?.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Refresh conversations every 30 seconds
+        setInterval(loadConversations, 30000);
+    </script>
+</body>
+</html>

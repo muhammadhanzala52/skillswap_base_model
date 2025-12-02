@@ -126,3 +126,114 @@ def find_matches_by_email(db: Session, email: str):
                 })
     
     return matches
+
+
+# Messaging Crud Operations
+def send_message(db: Session, sender_email: str, message_data: schemas.MessageCreate):
+    # Get sender and receiver
+    sender = get_user_by_email(db, sender_email)
+    receiver = get_user_by_email(db, message_data.receiver_email)
+    
+    if not sender or not receiver:
+        return None
+    
+    # Create message
+    new_message = models.Message(
+        sender_id=sender.id,
+        receiver_id=receiver.id,
+        content=message_data.content
+    )
+    
+    db.add(new_message)
+    db.commit()
+    db.refresh(new_message)
+    return new_message
+
+def get_user_messages(db: Session, user_email: str):
+    user = get_user_by_email(db, user_email)
+    if not user:
+        return []
+    
+    # Get all messages where user is sender or receiver
+    messages = db.query(models.Message).filter(
+        (models.Message.sender_id == user.id) | 
+        (models.Message.receiver_id == user.id)
+    ).order_by(models.Message.timestamp.desc()).all()
+    
+    # Format response with user details
+    result = []
+    for msg in messages:
+        result.append({
+            "id": msg.id,
+            "sender_id": msg.sender_id,
+            "sender_email": msg.sender.email if msg.sender else None,
+            "sender_name": msg.sender.name if msg.sender else None,
+            "receiver_id": msg.receiver_id,
+            "receiver_email": msg.receiver.email if msg.receiver else None,
+            "receiver_name": msg.receiver.name if msg.receiver else None,
+            "content": msg.content,
+            "timestamp": msg.timestamp,
+            "is_read": msg.is_read
+        })
+    
+    return result
+
+def get_conversation(db: Session, user1_email: str, user2_email: str):
+    user1 = get_user_by_email(db, user1_email)
+    user2 = get_user_by_email(db, user2_email)
+    
+    if not user1 or not user2:
+        return []
+    
+    # Get messages between these two users
+    messages = db.query(models.Message).filter(
+        ((models.Message.sender_id == user1.id) & (models.Message.receiver_id == user2.id)) |
+        ((models.Message.sender_id == user2.id) & (models.Message.receiver_id == user1.id))
+    ).order_by(models.Message.timestamp.asc()).all()
+    
+    # Format response properly
+    result = []
+    for msg in messages:
+        result.append({
+            "id": msg.id,
+            "sender_id": msg.sender_id,
+            "sender_email": msg.sender.email if msg.sender else None,
+            "sender_name": msg.sender.name if msg.sender else "Unknown",
+            "receiver_id": msg.receiver_id,
+            "receiver_email": msg.receiver.email if msg.receiver else None,
+            "receiver_name": msg.receiver.name if msg.receiver else "Unknown",
+            "content": msg.content,
+            "timestamp": msg.timestamp,
+            "is_read": msg.is_read == 1
+        })
+    
+    return result
+
+def mark_messages_as_read(db: Session, user_email: str, other_user_email: str):
+    user = get_user_by_email(db, user_email)
+    other_user = get_user_by_email(db, other_user_email)
+    
+    if not user or not other_user:
+        return 0
+    
+    # Mark messages from other_user to user as read
+    updated = db.query(models.Message).filter(
+        (models.Message.sender_id == other_user.id) &
+        (models.Message.receiver_id == user.id) &
+        (models.Message.is_read == 0)
+    ).update({"is_read": 1})
+    
+    db.commit()
+    return updated
+
+def get_unread_count(db: Session, user_email: str):
+    user = get_user_by_email(db, user_email)
+    if not user:
+        return 0
+    
+    count = db.query(models.Message).filter(
+        (models.Message.receiver_id == user.id) &
+        (models.Message.is_read == 0)
+    ).count()
+    
+    return count

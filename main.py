@@ -54,6 +54,11 @@ def matches_page(request: Request, email: Optional[str] = None):
         return RedirectResponse("/login-page")
     return templates.TemplateResponse("matches.html", {"request": request, "email": email})
 
+@app.get("/messages-page")
+def messages_page(request: Request, email: Optional[str] = None):
+    if not email:
+        return RedirectResponse("/login-page")
+    return templates.TemplateResponse("messages.html", {"request": request, "email": email})
 # ========== FRONTEND ACTION ENDPOINTS ==========
 
 @app.post("/register-user")
@@ -223,3 +228,84 @@ def get_user_profile(email: str, db: Session = Depends(get_db)):
             for skill in user.skills_needed
         ]
     }
+
+# Messaging Endpoints
+@app.post("/messages/send")
+def send_message_endpoint(
+    sender_email: str,
+    message: schemas.MessageCreate,
+    db: Session = Depends(get_db)
+):
+    result = crud.send_message(db, sender_email, message)
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "Message sent successfully", "message_id": result.id}
+
+@app.get("/messages/{user_email}")
+def get_messages_endpoint(
+    user_email: str,
+    db: Session = Depends(get_db)
+):
+    messages = crud.get_user_messages(db, user_email)
+    return messages
+
+@app.get("/messages/conversation/{user1_email}/{user2_email}")
+def get_conversation_endpoint(
+    user1_email: str,
+    user2_email: str,
+    db: Session = Depends(get_db)
+):
+    conversation = crud.get_conversation(db, user1_email, user2_email)
+    return conversation
+
+@app.post("/messages/mark-read/{user_email}/{other_user_email}")
+def mark_messages_read_endpoint(
+    user_email: str,
+    other_user_email: str,
+    db: Session = Depends(get_db)
+):
+    updated = crud.mark_messages_as_read(db, user_email, other_user_email)
+    return {"updated_count": updated}
+
+@app.get("/messages/unread/{user_email}")
+def get_unread_count_endpoint(
+    user_email: str,
+    db: Session = Depends(get_db)
+):
+    count = crud.get_unread_count(db, user_email)
+    return {"unread_count": count}
+
+# @app.get("/debug/user/{email}")
+# def debug_user(email: str, db: Session = Depends(get_db)):
+#     """Debug endpoint to see user data"""
+#     user = crud.get_user_by_email(db, email)
+#     if not user:
+#         return {"error": "User not found"}
+    
+#     return {
+#         "id": user.id,
+#         "name": user.name,
+#         "email": user.email,
+#         "skills_offered_count": len(user.skills_offered),
+#         "skills_needed_count": len(user.skills_needed)
+#     }
+
+# @app.get("/debug/messages/{email}")
+# def debug_messages(email: str, db: Session = Depends(get_db)):
+#     """Debug endpoint to see all messages for a user"""
+#     messages = crud.get_user_messages(db, email)
+#     result = []
+#     for msg in messages:
+#         result.append({
+#             "id": msg.id,
+#             "sender_id": msg.sender_id,
+#             "sender_email": msg.sender.email if msg.sender else None,
+#             "sender_name": msg.sender.name if msg.sender else None,
+#             "receiver_id": msg.receiver_id,
+#             "receiver_email": msg.receiver.email if msg.receiver else None,
+#             "receiver_name": msg.receiver.name if msg.receiver else None,
+#             "content": msg.content,
+#             "timestamp": msg.timestamp,
+#             "is_read": msg.is_read
+#         })
+#     return result

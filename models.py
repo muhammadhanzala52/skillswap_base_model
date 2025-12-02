@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
 from database import Base
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
 class User(Base):
     __tablename__ = "users"
@@ -30,3 +31,18 @@ class SkillRequest(Base):
     description = Column(Text)  # What they want to learn
     
     user = relationship("User", back_populates="skills_needed")
+
+
+class Message(Base):
+    __tablename__ = "messages"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    receiver_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(Text)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    is_read = Column(Integer, default=0)  # 0 = unread, 1 = read
+    
+    # Relationships
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])

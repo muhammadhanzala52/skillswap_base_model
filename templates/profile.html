@@ -16,12 +16,7 @@
     </style>
 </head>
 <body>
-    <div class="nav">
-        <a href="/">Home</a>
-        <a href="/profile-page?email={{ email }}">My Profile</a>
-        <a href="/matches-page?email={{ email }}">My Matches</a>
-        <a href="/login-page" style="float: right;">Logout</a>
-    </div>
+    {% include "nav.html" %}
 
     <h2>My SkillSwap Profile</h2>
     <p>Welcome! Manage your skills and find learning partners.</p>
