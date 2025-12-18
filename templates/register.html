@@ -1,51 +1,45 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SkillSwap - Register</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; }
-        .nav { background: #f4f4f4; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        .nav a { margin-right: 15px; text-decoration: none; color: #333; font-weight: bold; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input[type="text"], input[type="email"], input[type="password"] { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px;
-        }
-        .btn { background: #007bff; color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%; }
-        .btn:hover { background: #0056b3; }
-        .error { color: red; margin-bottom: 15px; padding: 10px; background: #ffe6e6; border-radius: 5px; }
-    </style>
-</head>
-<body>
-    {% include "nav.html" %}
+{% extends "base.html" %}
 
-    <h2>Create Your SkillSwap Account</h2>
+{% block title %}SkillSwap - Register{% endblock %}
 
-    {% if error %}
-        <div class="error">{{ error }}</div>
-    {% endif %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-body p-5">
+                <h2 class="text-center mb-4">Create Account</h2>
+                
+                <form method="post" action="/register-user">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               placeholder="Your name" required>
+                    </div>
 
-    <form method="post" action="/register-user">
-        <div class="form-group">
-            <label for="name">Full Name:</label>
-            <input type="text" id="name" name="name" required placeholder="Your full name">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               placeholder="your@email.com" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" 
+                               placeholder="Create a password" required>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Create Account
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <p>Already have an account? <a href="/login-page">Login here</a></p>
+                    </div>
+                </form>
+            </div>
         </div>
-
-        <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required placeholder="your@email.com">
-        </div>
-
-        <div class="form-group">
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required placeholder="Create a password">
-        </div>
-
-        <button type="submit" class="btn">Register</button>
-    </form>
-
-    <p style="margin-top: 20px;">
-        Already have an account? <a href="/login-page">Login here</a>
-    </p>
-</body>
-</html>
+    </div>
+</div>
+{% endblock %}

@@ -1,124 +1,81 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SkillSwap - Matches</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .match-card { 
-            border: 1px solid #ddd; 
-            padding: 20px; 
-            margin: 15px 0; 
-            border-radius: 8px;
-            background: white;
-        }
-        .match-teach { 
-            border-left: 5px solid #28a745; 
-            background: linear-gradient(to right, #f8fff8, white);
-        }
-        .match-learn { 
-            border-left: 5px solid #007bff; 
-            background: linear-gradient(to right, #f8f9ff, white);
-        }
-        .btn-contact { 
-            background: #007bff; 
-            color: white; 
-            padding: 10px 20px; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 10px;
-            font-size: 16px;
-        }
-        .btn-contact:hover { 
-            background: #0056b3; 
-        }
-        .no-matches {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-    </style>
-</head>
-<body>
-    <!-- Include Navigation -->
-    {% include "nav.html" %}
+{% extends "base.html" %}
 
-    <h2>My Skill Matches 🔍</h2>
-    <p>Find people to learn from and teach!</p>
+{% block title %}SkillSwap - Matches{% endblock %}
 
-    <div id="matches-container">
-        <em>Loading matches...</em>
+{% block content %}
+<h2 class="mb-4">My Matches</h2>
+
+<div id="matches-container">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2">Loading matches...</p>
     </div>
+</div>
 
-    <script>
-        const userEmail = "{{ email }}";
+<script>
+    // const userEmail = "{{ email }}";
+    
+    fetch(`/users/${userEmail}/matches`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('matches-container');
+    
+    if (data.matches_found === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <h4>No matches found yet</h4>
+                <p>Add more skills to your profile to find learning partners!</p>
+                <a href="/profile-page?email=${userEmail}" class="btn btn-primary">
+                    Add Skills
+                </a>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `<p class="text-muted mb-4">Found ${data.matches_found} matches:</p>`;
+    
+    data.matches.forEach(match => {
+        const cardClass = match.match_type === 'you_can_teach' ? 'border-success' : 'border-primary';
+        const titleIcon = match.match_type === 'you_can_teach' ? '🎯' : '📚';
+        const titleText = match.match_type === 'you_can_teach' ? 'You can teach' : 'You can learn';
+        const skillName = match.match_type === 'you_can_teach' ? match.your_skill : match.skill_you_need;
         
-        // Load matches
-        fetch(`/users/${userEmail}/matches`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to load matches');
-                }
-                return response.json();
-            })
-            .then(data => {
-                const container = document.getElementById('matches-container');
-                
-                if (data.matches_found === 0) {
-                    container.innerHTML = `
-                        <div class="no-matches">
-                            <h3>No matches found yet 😔</h3>
-                            <p>Add more skills to your profile to find learning partners!</p>
-                            <a href="/profile-page?email=${userEmail}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">
-                                Add More Skills
-                            </a>
-                        </div>
-                    `;
-                    return;
-                }
+        html += `
+            <div class="card shadow-sm mb-3 ${cardClass}">
+                <div class="card-body">
+                    <h5 class="card-title">${titleIcon} ${titleText}: ${skillName}</h5>
+                    <p class="card-text">
+                        
 
-                let html = `<p style="color: #666; margin-bottom: 20px;">Found ${data.matches_found} potential matches:</p>`;
-                
-                data.matches.forEach(match => {
-                    if (match.match_type === 'you_can_teach') {
-                        html += `
-                            <div class="match-card match-teach">
-                                <h4>🎯 You can teach: <strong>${match.your_skill}</strong></h4>
-                                <p><strong>👤 Student:</strong> ${match.matched_user.name}</p>
-                                <p><strong>📖 They want to learn:</strong> ${match.their_request || 'No specific request'}</p>
-                                <p><strong>🎓 Your skill level:</strong> ${match.their_skill_level}</p>
-                                <a href="/messages-page?email=${userEmail}&start_with=${encodeURIComponent(match.matched_user.email)}" class="btn-contact">
-                                    💬 Contact to Teach
-                                </a>
-                            </div>
-                        `;
-                    } else {
-                        html += `
-                            <div class="match-card match-learn">
-                                <h4>📚 You can learn: <strong>${match.skill_you_need}</strong></h4>
-                                <p><strong>👤 Teacher:</strong> ${match.matched_user.name}</p>
-                                <p><strong>💡 They offer:</strong> ${match.their_offer}</p>
-                                <p><strong>🎓 Their skill level:</strong> ${match.their_skill_level}</p>
-                                <a href="/messages-page?email=${userEmail}&start_with=${match.matched_user.email}" class="btn-contact">
-                                    💬 Contact to Learn
-                                </a>
-                            </div>
-                        `;
-                    }
-                });
-                
-                container.innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Error loading matches:', error);
-                document.getElementById('matches-container').innerHTML = `
-                    <div style="color: red; padding: 20px; background: #ffe6e6; border-radius: 5px;">
-                        Error loading matches: ${error.message}
+                        <strong>${match.matched_user.name}</strong> <br>
+                        ${match.their_request || match.their_offer}
+
+                        
+                    </p>
+                    <div class="mt-3">
+                        <button onclick="startVideoCall('${match.matched_user.email}', '${match.matched_user.name}')" 
+                                class="btn btn-success me-2">
+                            <i class="bi bi-camera-video me-1"></i>Video Call
+                        </button>
+                        <a href="/messages-page?email=${userEmail}&start_with=${match.matched_user.email}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-chat me-1"></i>Message
+                        </a>
                     </div>
-                `;
-            });
-    </script>
-</body>
-</html>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+})
+        .catch(error => {
+            console.error('Error loading matches:', error);
+            document.getElementById('matches-container').innerHTML = 
+                `<div class="alert alert-danger">
+                    Error loading matches: ${error.message}
+                </div>`;
+        });
+</script>
+{% endblock %}

@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-
 # This defines what data we expect when creating a user
 class UserCreate(BaseModel):
     name: str
@@ -78,3 +77,22 @@ class ConversationResponse(BaseModel):
     last_message: Optional[str]
     last_message_time: Optional[datetime]
     unread_count: int = 0
+
+
+
+
+class VideoSessionCreate(BaseModel):
+    user1_email: str
+    user2_email: str
+
+class VideoSessionResponse(BaseModel):
+    id: int
+    room_id: str
+    user1_email: str
+    user2_email: str
+    meeting_url: str
+    status: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

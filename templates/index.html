@@ -1,35 +1,771 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SkillSwap - Home</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .nav { background: #f4f4f4; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        .nav a { margin-right: 20px; text-decoration: none; color: #333; font-weight: bold; }
-        .btn { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; margin: 10px 5px; }
-        .btn:hover { background: #0056b3; }
-    </style>
-</head>
-<body>
-    {% include "nav.html" %}
+{% extends "base.html" %}
 
-    <h1>Welcome to SkillSwap! 🔄</h1>
-    <p>Trade skills with other students and learn together.</p>
+{% block homepage_content %}
+
+{% block title %}SkillSwap - Future of Skill Exchange{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Prevent horizontal scroll */
+    body {
+        overflow-x: hidden;
+    }
+
+    /* Modern Gradient Background - FIXED FOR FULL WIDTH */
+    .hero-gradient, .full-width-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+    }
     
-    <div style="margin: 30px 0;">
-        <h3>Get Started:</h3>
-        <a href="/register-page" class="btn">Create Account</a>
-        <a href="/login-page" class="btn">Login</a>
-    </div>
+    /* For sections with different colors but same width */
+    .full-width-section {
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+    }
+    
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Floating Animation */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0px); }
+    }
+    
+    .floating {
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    /* Glow Effects */
+    .glow {
+        text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+    }
+    
+    /* Glass Morphism */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Scroll Animations */
+    .fade-in {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s ease-out;
+    }
+    
+    .fade-in.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .slide-in-left {
+        opacity: 0;
+        transform: translateX(-100px);
+        transition: all 0.8s ease-out;
+    }
+    
+    .slide-in-left.visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .slide-in-right {
+        opacity: 0;
+        transform: translateX(100px);
+        transition: all 0.8s ease-out;
+    }
+    
+    .slide-in-right.visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    /* Feature Cards Hover */
+    .feature-card {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        border-color: #667eea;
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+    }
+    
+    /* Modern Button */
+    .btn-modern {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-modern:after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 5px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.5);
+        opacity: 0;
+        border-radius: 100%;
+        transform: scale(1, 1) translate(-50%);
+        transform-origin: 50% 50%;
+    }
+    
+    .btn-modern:focus:after {
+        animation: ripple 1s ease-out;
+    }
+    
+    @keyframes ripple {
+        0% {
+            transform: scale(0, 0);
+            opacity: 1;
+        }
+        20% {
+            transform: scale(25, 25);
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+            transform: scale(40, 40);
+        }
+    }
+    
+    /* Particle Background */
+    #particles-js {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    
+    /* Stats Counter */
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(45deg, #667eea, #f093fb);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Floating Elements */
+    .floating-element {
+        position: absolute;
+        z-index: -1;
+        opacity: 0.1;
+        animation: float 8s ease-in-out infinite;
+    }
+    
+    /* Typing Animation */
+    .typing-text {
+        overflow: hidden;
+        border-right: 3px solid #667eea;
+        white-space: nowrap;
+        margin: 0 auto;
+        letter-spacing: 2px;
+        animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+    }
+    
+    @keyframes typing {
+        from { width: 0; }
+        to { width: 100%; }
+    }
+    
+    @keyframes blink-caret {
+        from, to { border-color: transparent; }
+        50% { border-color: #667eea; }
+    }
+    
+    /* Gradient Text */
+    .gradient-text {
+        background: linear-gradient(45deg, #667eea, #f093fb, #f5576c);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        background-size: 300% 300%;
+        animation: gradientText 5s ease infinite;
+    }
+    
+    @keyframes gradientText {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Dark Theme Variant */
+    .dark-gradient {
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 15s ease infinite;
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+    }
+    
+    /* Light Theme Variant */
+    .light-gradient {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+    }
+</style>
+{% endblock %}
 
-    <div style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
-        <h4>How it works:</h4>
-        <ol>
-            <li>Register and create your profile</li>
-            <li>Add skills you can teach others</li>
-            <li>Add skills you want to learn</li>
-            <li>Find matches and start learning!</li>
-        </ol>
+{% block content %}
+<!-- Hero Section with Particles -->
+<section class="hero-gradient text-white position-relative overflow-hidden" style="padding: 100px 0; margin-top: -20px; border-radius: 0 0 50px 50px;">
+    <div id="particles-js"></div>
+    
+    <!-- Floating Elements -->
+    <div class="floating-element" style="top: 20%; left: 10%; font-size: 100px;">💡</div>
+    <div class="floating-element" style="top: 60%; right: 15%; font-size: 80px;">🚀</div>
+    <div class="floating-element" style="top: 30%; right: 20%; font-size: 120px;">🌟</div>
+    
+    <div class="container position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-6 fade-in">
+                <h1 class="display-2 fw-bold mb-4 glow">
+                    The Future of <span class="gradient-text">Skill Exchange</span>
+                </h1>
+                
+                <div class="typing-text mb-4" style="width: fit-content;">
+                    <p class="lead">Where Knowledge Meets Opportunity</p>
+                </div>
+                
+                <p class="mb-4 fs-5">
+                    Join the revolution of peer-to-peer learning. Connect with brilliant minds, 
+                    exchange expertise, and accelerate your growth in the digital age.
+                </p>
+                
+                <div class="d-flex gap-3 flex-wrap">
+                    {% if email %}
+                    <a href="/profile-page?email={{ email }}" class="btn btn-modern btn-lg text-white px-4 py-3">
+                        <i class="bi bi-rocket-takeoff me-2"></i>Launch Dashboard
+                    </a>
+                    {% else %}
+                    <a href="/register-page" class="btn btn-modern btn-lg text-white px-4 py-3">
+                        <i class="bi bi-lightning-charge me-2"></i>Start Free Trial
+                    </a>
+                    <a href="#how-it-works" class="btn btn-outline-light btn-lg px-4 py-3">
+                        <i class="bi bi-play-circle me-2"></i>Watch Demo
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <!-- Trust Badges -->
+                <div class="mt-5 d-flex gap-4 align-items-center">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="bi bi-shield-check fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">Secure Platform</div>
+                            <small>End-to-end encrypted</small>
+                        </div>
+                    </div>
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="bi bi-lightning fs-2"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">Lightning Fast</div>
+                            <small>AI-powered matching</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 fade-in" style="animation-delay: 0.3s;">
+                <div class="floating">
+                    <div class="glass-card rounded-4 p-4 shadow-lg">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-arrow-left-right display-1 gradient-text"></i>
+                        </div>
+                        
+                        <!-- Interactive Stats -->
+                        <div class="row text-center mb-4">
+                            <div class="col-4">
+                                <div class="stat-number" id="users-counter">0</div>
+                                <small>Active Users</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-number" id="skills-counter">0</div>
+                                <small>Skills Shared</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="stat-number" id="matches-counter">0</div>
+                                <small>Matches Made</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Mini Preview -->
+                        <div class="bg-dark rounded-3 p-3 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-primary p-2 me-3">
+                                    <i class="bi bi-code-slash"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">Python Expert</div>
+                                    <small>Teaching 5 students</small>
+                                </div>
+                                <div class="badge bg-success">Online</div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-dark rounded-3 p-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle bg-warning p-2 me-3">
+                                    <i class="bi bi-music-note-beamed"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">Guitar Maestro</div>
+                                    <small>Learning Spanish</small>
+                                </div>
+                                <div class="badge bg-info">Available</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</body>
-</html>
+</section>
+
+<!-- Features Grid -->
+<section class="full-width-section py-5 light-gradient" id="features">
+    <div class="container">
+        <div class="text-center mb-5 fade-in">
+            <h2 class="display-4 fw-bold gradient-text mb-3">Why SkillSwap is Different</h2>
+            <p class="lead text-muted">We're building the future of education</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-lg-4 col-md-6 slide-in-left">
+                <div class="feature-card h-100 p-4 rounded-4 border bg-white shadow-sm">
+                    <div class="feature-icon mb-4">
+                        <div class="rounded-circle bg-primary bg-gradient p-3 d-inline-flex">
+                            <i class="bi bi-cpu fs-2 text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold">AI-Powered Matching</h4>
+                    <p class="text-muted">
+                        Our intelligent algorithm connects you with perfect learning partners 
+                        based on skills, interests, and learning style.
+                    </p>
+                    <div class="mt-3">
+                        <span class="badge bg-primary me-2">Neural Networks</span>
+                        <span class="badge bg-primary">Smart Filters</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="col-lg-4 col-md-6 fade-in" style="animation-delay: 0.2s;">
+                <div class="feature-card h-100 p-4 rounded-4 border bg-white shadow-sm">
+                    <div class="feature-icon mb-4">
+                        <div class="rounded-circle bg-success bg-gradient p-3 d-inline-flex">
+                            <i class="bi bi-robot fs-2 text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold">Smart Learning Paths</h4>
+                    <p class="text-muted">
+                        Personalized learning journeys with progress tracking, 
+                        milestones, and adaptive content recommendations.
+                    </p>
+                    <div class="mt-3">
+                        <span class="badge bg-success me-2">Adaptive</span>
+                        <span class="badge bg-success">Personalized</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="col-lg-4 col-md-6 slide-in-right">
+                <div class="feature-card h-100 p-4 rounded-4 border bg-white shadow-sm">
+                    <div class="feature-icon mb-4">
+                        <div class="rounded-circle bg-warning bg-gradient p-3 d-inline-flex">
+                            <i class="bi bi-graph-up-arrow fs-2 text-white"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold">Blockchain Verified</h4>
+                    <p class="text-muted">
+                        Skills and achievements are securely verified and stored 
+                        on blockchain for lifelong credential portability.
+                    </p>
+                    <div class="mt-3">
+                        <span class="badge bg-warning me-2">Web3 Ready</span>
+                        <span class="badge bg-warning">Immutable</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="full-width-section py-5 dark-gradient text-white" id="how-it-works">
+    <div class="container">
+        <div class="text-center mb-5 fade-in">
+            <h2 class="display-4 fw-bold mb-3">How It Works in 60 Seconds</h2>
+            <p class="lead opacity-75">Join the revolution in four simple steps</p>
+        </div>
+        
+        <div class="row g-5">
+            <!-- Step 1 -->
+            <div class="col-lg-3 col-md-6 fade-in">
+                <div class="text-center">
+                    <div class="step-circle bg-primary bg-gradient rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                         style="width: 100px; height: 100px;">
+                        <span class="display-4 fw-bold">1</span>
+                    </div>
+                    <h4 class="fw-bold">Create Your Digital Twin</h4>
+                    <p class="opacity-75">
+                        Build your profile with skills, interests, and learning goals.
+                        Our AI analyzes your profile to understand your potential.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="col-lg-3 col-md-6 fade-in" style="animation-delay: 0.2s;">
+                <div class="text-center">
+                    <div class="step-circle bg-success bg-gradient rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                         style="width: 100px; height: 100px;">
+                        <span class="display-4 fw-bold">2</span>
+                    </div>
+                    <h4 class="fw-bold">Get Smart Matches</h4>
+                    <p class="opacity-75">
+                        Receive intelligent matches with compatible learners and teachers.
+                        Filter by skill level, availability, and learning style.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="col-lg-3 col-md-6 fade-in" style="animation-delay: 0.4s;">
+                <div class="text-center">
+                    <div class="step-circle bg-warning bg-gradient rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                         style="width: 100px; height: 100px;">
+                        <span class="display-4 fw-bold">3</span>
+                    </div>
+                    <h4 class="fw-bold">Interactive Sessions</h4>
+                    <p class="opacity-75">
+                        Join live sessions with screen sharing, collaborative whiteboards,
+                        and real-time feedback systems.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Step 4 -->
+            <div class="col-lg-3 col-md-6 fade-in" style="animation-delay: 0.6s;">
+                <div class="text-center">
+                    <div class="step-circle bg-danger bg-gradient rounded-circle d-flex align-items-center justify-content-center mx-auto mb-4" 
+                         style="width: 100px; height: 100px;">
+                        <span class="display-4 fw-bold">4</span>
+                    </div>
+                    <h4 class="fw-bold">Earn & Grow</h4>
+                    <p class="opacity-75">
+                        Collect verifiable credentials, build your reputation,
+                        and unlock premium features as you progress.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Animated Progress Bar -->
+        <div class="mt-5 fade-in" style="animation-delay: 0.8s;">
+            <div class="glass-card rounded-4 p-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Learning Progress</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%; background: linear-gradient(45deg, #667eea, #764ba2);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="full-width-section py-5 light-gradient">
+    <div class="container">
+        <div class="text-center mb-5 fade-in">
+            <h2 class="display-4 fw-bold gradient-text mb-3">What Pioneers Say</h2>
+            <p class="lead text-muted">Join thousands already experiencing the future</p>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Testimonial 1 -->
+            <div class="col-md-4 fade-in">
+                <div class="h-100 p-4 rounded-4 border shadow-sm bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=667eea" 
+                             class="rounded-circle me-3" width="50" height="50" alt="Alex">
+                        <div>
+                            <div class="fw-bold">Alex Chen</div>
+                            <small class="text-muted">AI Researcher @ Google</small>
+                        </div>
+                    </div>
+                    <p class="mb-0">
+                        "SkillSwap's AI matching found me a quantum computing mentor 
+                        in 24 hours. The future of learning is here."
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Testimonial 2 -->
+            <div class="col-md-4 fade-in" style="animation-delay: 0.2s;">
+                <div class="h-100 p-4 rounded-4 border shadow-sm bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Maya&backgroundColor=764ba2" 
+                             class="rounded-circle me-3" width="50" height="50" alt="Maya">
+                        <div>
+                            <div class="fw-bold">Maya Rodriguez</div>
+                            <small class="text-muted">Blockchain Developer</small>
+                        </div>
+                    </div>
+                    <p class="mb-0">
+                        "Earning verifiable credentials on blockchain while teaching 
+                        Solidity? This is the education platform of tomorrow."
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Testimonial 3 -->
+            <div class="col-md-4 fade-in" style="animation-delay: 0.4s;">
+                <div class="h-100 p-4 rounded-4 border shadow-sm bg-white">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Kenji&backgroundColor=f093fb" 
+                             class="rounded-circle me-3" width="50" height="50" alt="Kenji">
+                        <div>
+                            <div class="fw-bold">Kenji Tanaka</div>
+                            <small class="text-muted">Startup Founder</small>
+                        </div>
+                    </div>
+                    <p class="mb-0">
+                        "From zero to fluent in Spanish while teaching Python to 3 students. 
+                        The productivity multiplier is insane."
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5 hero-gradient text-white", style="margin-bottom: 0.1%;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center fade-in">
+                <h2 class="display-3 fw-bold mb-4 glow">Ready to Join the Future?</h2>
+                <p class="lead mb-5">
+                    Be part of the revolution. Connect with innovators, creators, 
+                    and lifelong learners from around the globe.
+                </p>
+                
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    {% if email %}
+                    <a href="/matches-page?email={{ email }}" class="btn btn-light btn-lg px-5 py-3 fw-bold">
+                        <i class="bi bi-lightning-charge-fill me-2"></i>Explore Matches
+                    </a>
+                    <a href="/messages-page?email={{ email }}" class="btn btn-outline-light btn-lg px-5 py-3">
+                        <i class="bi bi-rocket me-2"></i>Launch Messages
+                    </a>
+                    {% else %}
+                    <a href="/register-page" class="btn btn-light btn-lg px-5 py-3 fw-bold">
+                        <i class="bi bi-stars me-2"></i>Start Free Trial
+                    </a>
+                    <a href="/login-page" class="btn btn-outline-light btn-lg px-5 py-3">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Existing User
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-5">
+                    <small class="opacity-75">
+                        <i class="bi bi-shield-check me-1"></i>
+                        No credit card required • 14-day free trial • Cancel anytime
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Particles.js for Background Animation -->
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+<script>
+    // Initialize Particles.js
+    particlesJS('particles-js', {
+        particles: {
+            number: { value: 80, density: { enable: true, value_area: 800 } },
+            color: { value: "#ffffff" },
+            shape: { type: "circle" },
+            opacity: { value: 0.5, random: true },
+            size: { value: 3, random: true },
+            line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#ffffff",
+                opacity: 0.2,
+                width: 1
+            },
+            move: {
+                enable: true,
+                speed: 2,
+                direction: "none",
+                random: true,
+                straight: false,
+                out_mode: "out",
+                bounce: false
+            }
+        },
+        interactivity: {
+            detect_on: "canvas",
+            events: {
+                onhover: { enable: true, mode: "repulse" },
+                onclick: { enable: true, mode: "push" }
+            }
+        }
+    });
+
+    // Scroll Animations
+    function checkVisibility() {
+        const elements = document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right');
+        
+        elements.forEach(element => {
+            const position = element.getBoundingClientRect();
+            
+            // Check if element is in viewport
+            if(position.top < window.innerHeight - 100) {
+                element.classList.add('visible');
+            }
+        });
+    }
+    
+    // Animated Counters
+    function animateCounters() {
+        const counters = document.querySelectorAll('.stat-number');
+        const speed = 200;
+        
+        counters.forEach(counter => {
+            const target = parseInt(counter.getAttribute('data-target') || 
+                (counter.id === 'users-counter' ? 1247 : 
+                 counter.id === 'skills-counter' ? 3589 : 
+                 counter.id === 'matches-counter' ? 892 : 0));
+            
+            const updateCount = () => {
+                const count = parseInt(counter.innerText);
+                const increment = target / speed;
+                
+                if(count < target) {
+                    counter.innerText = Math.ceil(count + increment);
+                    setTimeout(updateCount, 10);
+                } else {
+                    counter.innerText = target.toLocaleString();
+                }
+            };
+            
+            updateCount();
+        });
+    }
+    
+    // Animated Progress Bar
+    function animateProgressBar() {
+        let width = 0;
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+        const interval = setInterval(() => {
+            if(width >= 95) {
+                clearInterval(interval);
+            } else {
+                width += 1;
+                progressBar.style.width = width + '%';
+                progressPercent.innerText = width + '%';
+            }
+        }, 50);
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Start animations
+        checkVisibility();
+        animateCounters();
+        animateProgressBar();
+        
+        // Update on scroll
+        window.addEventListener('scroll', checkVisibility);
+        
+        // Add some interactive effects
+        const buttons = document.querySelectorAll('.btn-modern');
+        buttons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Create ripple effect
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size/2;
+                const y = e.clientY - rect.top - size/2;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.7);
+                    transform: scale(0);
+                    animation: ripple 0.6s linear;
+                    width: ${size}px;
+                    height: ${size}px;
+                    top: ${y}px;
+                    left: ${x}px;
+                `;
+                
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

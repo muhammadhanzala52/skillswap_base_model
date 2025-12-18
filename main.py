@@ -9,6 +9,9 @@ import schemas
 import crud
 from auth import verify_password
 from typing import Optional
+import time
+import secrets
+
 
 # Create database tables
 models.Base.metadata.create_all(bind=database.engine)
@@ -126,6 +129,16 @@ def add_skill_frontend(
     
     return RedirectResponse(f"/profile-page?email={email}", status_code=303)
 
+@app.get("/video/check-incoming/{email}")
+def check_incoming_call(email: str, db: Session = Depends(get_db)):
+    call = crud.get_active_video_call(db, email)
+    if call:
+        return {
+            "has_call": True,
+            "room_id": call.room_id,
+            "caller": call.user1_email
+        }
+    return {"has_call": False}
 
 # ========== BACKEND APIs (UNCHANGED) ==========
 
@@ -275,37 +288,54 @@ def get_unread_count_endpoint(
     count = crud.get_unread_count(db, user_email)
     return {"unread_count": count}
 
-# @app.get("/debug/user/{email}")
-# def debug_user(email: str, db: Session = Depends(get_db)):
-#     """Debug endpoint to see user data"""
-#     user = crud.get_user_by_email(db, email)
-#     if not user:
-#         return {"error": "User not found"}
-    
-#     return {
-#         "id": user.id,
-#         "name": user.name,
-#         "email": user.email,
-#         "skills_offered_count": len(user.skills_offered),
-#         "skills_needed_count": len(user.skills_needed)
-#     }
 
-# @app.get("/debug/messages/{email}")
-# def debug_messages(email: str, db: Session = Depends(get_db)):
-#     """Debug endpoint to see all messages for a user"""
-#     messages = crud.get_user_messages(db, email)
-#     result = []
-#     for msg in messages:
-#         result.append({
-#             "id": msg.id,
-#             "sender_id": msg.sender_id,
-#             "sender_email": msg.sender.email if msg.sender else None,
-#             "sender_name": msg.sender.name if msg.sender else None,
-#             "receiver_id": msg.receiver_id,
-#             "receiver_email": msg.receiver.email if msg.receiver else None,
-#             "receiver_name": msg.receiver.name if msg.receiver else None,
-#             "content": msg.content,
-#             "timestamp": msg.timestamp,
-#             "is_read": msg.is_read
-#         })
-#     return result
+@app.post("/video/create", response_model=schemas.VideoSessionResponse)
+def create_video_session_endpoint(
+    session_data: schemas.VideoSessionCreate, # Changed to accept the Pydantic model
+    db: Session = Depends(get_db)
+):
+    """Create a new video session room using JSON Body data"""
+    # Pass the whole session_data object to crud
+    session = crud.create_video_session(db, session_data)
+    return session
+
+@app.get("/video/sessions/{email}")
+def get_user_video_sessions(email: str, db: Session = Depends(get_db)):
+    """Get all video sessions for a user"""
+    sessions = crud.get_video_sessions_by_user(db, email)
+    return sessions
+
+@app.post("/video/update-status/{room_id}")
+def update_session_status(
+    room_id: str,
+    status: str = "active",  # "active" or "ended"
+    db: Session = Depends(get_db)
+):
+    """Update video session status"""
+    updated = crud.update_video_session_status(db, room_id, status)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"message": f"Session status updated to {status}"}
+
+@app.get("/video/room/{room_id}")
+def get_video_room_info(room_id: str, db: Session = Depends(get_db)):
+    """Get information about a video room"""
+    session = db.query(models.VideoSession).filter(
+        models.VideoSession.room_id == room_id
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    return {
+        "room_id": session.room_id,
+        "user1_email": session.user1_email,
+        "user2_email": session.user2_email,
+        "meeting_url": session.meeting_url,
+        "status": session.status,
+        "created_at": session.created_at
+    }
+@app.post("/video/decline/{room_id}")
+def decline_call_endpoint(room_id: str, db: Session = Depends(get_db)):
+    crud.decline_video_call(db, room_id)
+    return {"message": "Call declined"}

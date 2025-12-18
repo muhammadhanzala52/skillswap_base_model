@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SkillSwap{% endblock %}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --dark-gradient: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            --light-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        /* Prevent horizontal scroll */
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gradient-text {
+            background: linear-gradient(45deg, #667eea, #f093fb, #f5576c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 300% 300%;
+            animation: gradientText 5s ease infinite;
+        }
+
+        @keyframes gradientText {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* MODERN NAVBAR */
+        .navbar {
+            background: var(--dark-gradient) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.8rem;
+            background: linear-gradient(45deg, #667eea, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9) !important;
+            margin: 0 0.5rem;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            padding: 0.5rem 1rem !important;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .nav-link.active {
+            background: rgba(102, 126, 234, 0.25);
+            border-left: 3px solid #667eea;
+            color: white !important;
+        }
+        
+        /* CONTAINERS FOR OTHER PAGES */
+        .page-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 1200px;
+            flex-grow: 1;
+        }
+        
+        .modern-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-modern {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+
+        .message-sent {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+            margin-left: auto;
+            padding: 12px 16px;
+        }
+        
+        .message-received {
+            background: #f0f2f5;
+            color: #1c1e21;
+            border-radius: 18px 18px 18px 4px;
+            margin-right: auto;
+            padding: 12px 16px;
+        }
+        
+        footer {
+            background: var(--dark-gradient);
+            padding: 2rem 0;
+            color: white;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <script>
+        window.userEmail = "{{ email }}";
+    </script>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-arrow-left-right me-2"></i>SkillSwap
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">Home</a>
+                    </li>
+                    {% if email %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'profile' in request.url.path %}active{% endif %}" href="/profile-page?email={{ email }}">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'matches' in request.url.path %}active{% endif %}" href="/matches-page?email={{ email }}">Matches</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'messages' in request.url.path %}active{% endif %}" href="/messages-page?email={{ email }}">Messages</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <div class="navbar-nav align-items-center">
+                    {% if email %}
+                    <div class="user-email me-3 text-white opacity-75 small">
+                        <i class="bi bi-person-circle me-1"></i>{{ email }}
+                    </div>
+                    <a class="btn btn-outline-light btn-sm" href="/login-page">Logout</a>
+                    {% else %}
+                    <a class="nav-link me-3" href="/login-page">Login</a>
+                    <a class="btn btn-modern px-3 py-2" href="/register-page">Get Started</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% if error %}
+        <div class="container mt-4">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if request.url.path == '/' %}
+            {% block homepage_content %}{% endblock %}
+        {% else %}
+            <div class="container">
+                <div class="page-container">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        {% endif %}
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-4 mb-3 mb-lg-0">
+                    <h4 class="gradient-text fw-bold mb-1">SkillSwap</h4>
+                    <p class="opacity-75 small mb-0">The future of peer-to-peer learning.</p>
+                </div>
+                <div class="col-lg-4 text-center mb-3 mb-lg-0">
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="#" class="text-white opacity-50"><i class="bi bi-github fs-5"></i></a>
+                        <a href="#" class="text-white opacity-50"><i class="bi bi-twitter fs-5"></i></a>
+                        <a href="#" class="text-white opacity-50"><i class="bi bi-linkedin fs-5"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-lg-end small opacity-75">
+                    &copy; 2025 SkillSwap. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="videoCallModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white border-0">
+                    <h5 class="modal-title" id="videoCallTitle">Video Session</h5>
+                    <div>
+                        <button id="toggleChatBtn" class="btn btn-sm btn-outline-light me-2">Chat</button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0" style="background: #1c1e21;">
+                    <div class="row g-0 h-100">
+                        <div class="col-12 col-lg-9" id="videoContainer">
+                            <div id="jitsi-container" style="width: 100%; height: 100%; min-height: 500px;"></div>
+                        </div>
+                        <div class="col-12 col-lg-3 d-none" id="chatSidebar" style="background: #2a2d32; border-left: 1px solid #404040;">
+                            <div class="p-3 text-white">
+                                <h6>Session Chat</h6>
+                                <div id="videoChatMessages" class="mt-3 small" style="height: 400px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-dark border-0">
+                    <button class="btn btn-danger px-4" onclick="endVideoCall()">End Call</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 2000">
+        <div id="callToast" class="toast hide shadow-lg border-primary" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+            <div class="toast-header bg-primary text-white">
+                <i class="bi bi-camera-video-fill me-2"></i>
+                <strong class="me-auto">Incoming Call</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body bg-white">
+                <p id="callerNameText" class="mb-3">User is inviting you...</p>
+                <div class="d-flex gap-2">
+                    <button id="acceptCallBtn" class="btn btn-success btn-sm w-100">Join</button>
+                    <button class="btn btn-outline-danger btn-sm w-100" onclick="declineCall()">Decline</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src='https://meet.jit.si/external_api.js'></script>
+    
+    <script>
+        // const userEmail = "{{ email }}";
+        // Global Variables
+        let jitsiApi = null;
+        let currentRoomId = null;
+        let pendingRoomId = null;
+        let declinedRooms = new Set();
+        
+
+        // 1. POLLING FOR CALLS
+        function startCheckingForCalls() {
+            if (!userEmail || userEmail === "None" || userEmail === "") return;
+
+            setInterval(async () => {
+                if (currentRoomId || pendingRoomId) return;
+
+                try {
+                    const response = await fetch(`/video/check-incoming/${encodeURIComponent(userEmail)}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.has_call && !declinedRooms.has(data.room_id)) {
+                            showCallNotification(data.room_id, data.caller);
+                        }
+                    }
+                } catch (e) {}
+            }, 5000);
+        }
+
+        function showCallNotification(roomId, callerEmail) {
+            pendingRoomId = roomId;
+            const toastEl = document.getElementById('callToast');
+            const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+            document.getElementById('callerNameText').innerText = `${callerEmail} is calling you.`;
+            
+            document.getElementById('acceptCallBtn').onclick = () => {
+                toast.hide();
+                currentRoomId = roomId;
+                pendingRoomId = null;
+                document.getElementById('videoCallTitle').textContent = `Call with ${callerEmail}`;
+                new bootstrap.Modal(document.getElementById('videoCallModal')).show();
+            };
+            toast.show();
+        }
+
+        async function declineCall() {
+    if (!pendingRoomId) return;
+    
+    // 1. Add to local ignore list so polling ignores it immediately
+    declinedRooms.add(pendingRoomId);
+    
+    // 2. Hide the Toast UI
+    const toastEl = document.getElementById('callToast');
+    const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+    toast.hide();
+
+    try {
+        // 3. Tell the server this call is dead
+        await fetch(`/video/decline/${pendingRoomId}`, { method: 'POST' });
+    } catch (e) {
+        console.error("Decline sync failed:", e);
+    }
+    
+    pendingRoomId = null;
+}
+
+        // 2. VIDEO LOGIC
+        async function startVideoCall(otherUserEmail, otherUserName) {
+            try {
+                const response = await fetch('/video/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ user1_email: userEmail, user2_email: otherUserEmail })
+                });
+                const sessionData = await response.json();
+                currentRoomId = sessionData.room_id;
+                document.getElementById('videoCallTitle').textContent = `Call with ${otherUserName || otherUserEmail}`;
+                new bootstrap.Modal(document.getElementById('videoCallModal')).show();
+            } catch (error) { alert('Failed to start call'); }
+        }
+
+        function initializeJitsi() {
+            if (!currentRoomId) return;
+            const options = {
+                roomName: currentRoomId,
+                width: '100%',
+                height: '100%',
+                parentNode: document.querySelector('#jitsi-container'),
+                userInfo: { displayName: userEmail },
+                configOverwrite: { prejoinPageEnabled: false, lobbyModeEnabled: false },
+                interfaceConfigOverwrite: { AUTHENTICATION_ENABLE: false }
+            };
+            if (jitsiApi) jitsiApi.dispose();
+            jitsiApi = new JitsiMeetExternalAPI('meet.jit.si', options);
+        }
+
+        function endVideoCall() {
+            if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
+            if (currentRoomId) {
+                fetch(`/video/update-status/${currentRoomId}?status=ended`, { method: 'POST' });
+            }
+            bootstrap.Modal.getInstance(document.getElementById('videoCallModal')).hide();
+            currentRoomId = null;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            startCheckingForCalls();
+            const modalEl = document.getElementById('videoCallModal');
+            modalEl.addEventListener('shown.bs.modal', initializeJitsi);
+            modalEl.addEventListener('hidden.bs.modal', endVideoCall);
+            document.getElementById('toggleChatBtn').addEventListener('click', () => {
+                document.getElementById('chatSidebar').classList.toggle('d-none');
+                document.getElementById('videoContainer').classList.toggle('col-lg-9');
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

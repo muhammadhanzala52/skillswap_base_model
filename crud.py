@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 import models
 import schemas
 from auth import hash_password
+from datetime import datetime
+import time
+import secrets
 
 # User operations
 def create_user(db: Session, user: schemas.UserCreate):
@@ -237,3 +240,71 @@ def get_unread_count(db: Session, user_email: str):
     ).count()
     
     return count
+
+
+
+
+
+
+def create_video_session(db: Session, session_data: schemas.VideoSessionCreate):
+    timestamp = int(time.time())
+    random_str = secrets.token_hex(4)
+    room_id = f"skillswap-{timestamp}-{random_str}"
+    
+    meeting_url = f"https://meet.jit.si/{room_id}"
+    
+    new_session = models.VideoSession(
+        room_id=room_id,
+        user1_email=session_data.user1_email, # Accessing from the object
+        user2_email=session_data.user2_email, # Accessing from the object
+        meeting_url=meeting_url,
+        status="created"
+    )
+    
+    db.add(new_session)
+    db.commit()
+    db.refresh(new_session)
+    return new_session
+
+def get_video_sessions_by_user(db: Session, email: str):
+    return db.query(models.VideoSession).filter(
+        (models.VideoSession.user1_email == email) | 
+        (models.VideoSession.user2_email == email)
+    ).order_by(models.VideoSession.created_at.desc()).all()
+
+def update_video_session_status(db: Session, room_id: str, status: str):
+    session = db.query(models.VideoSession).filter(
+        models.VideoSession.room_id == room_id
+    ).first()
+    
+    if session:
+        session.status = status
+        if status == "active" and not session.started_at:
+            session.started_at = datetime.utcnow()
+        elif status == "ended":
+            session.ended_at = datetime.utcnow()
+            if session.started_at:
+                duration = (datetime.utcnow() - session.started_at).seconds
+                session.duration_seconds = duration
+        
+        db.commit()
+        db.refresh(session)
+    
+    return session
+
+# --- Inside crud.py ---
+
+def get_active_video_call(db: Session, email: str):
+    """Find only brand-new calls for this user"""
+    return db.query(models.VideoSession).filter(
+        models.VideoSession.user2_email == email,
+        models.VideoSession.status == "created"  # Change this from .in_([...]) to just "created"
+    ).order_by(models.VideoSession.created_at.desc()).first()
+def decline_video_call(db: Session, room_id: str):
+    session = db.query(models.VideoSession).filter(
+        models.VideoSession.room_id == room_id
+    ).first()
+    if session:
+        session.status = "declined"
+        db.commit()
+    return session
