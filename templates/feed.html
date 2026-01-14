@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="mb-4 gradient-text fw-bold">Community Feed 📣</h2>
+        
+        <div class="card modern-card shadow-sm mb-4">
+            <div class="card-body">
+                <form action="/create-post" method="post">
+                    <input type="hidden" name="email" value="{{ email }}">
+                    <textarea name="content" class="form-control mb-2" placeholder="What do you want to learn or teach today?" rows="2" required></textarea>
+                    <div class="d-flex justify-content-between">
+                        <select name="category" class="form-select form-select-sm w-50">
+                            <option>Technology</option>
+                            <option>Languages</option>
+                            <option>Arts & Music</option>
+                        </select>
+                        <button type="submit" class="btn btn-modern btn-sm">Post to Feed</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="feed-container">
+            </div>
+    </div>
+</div>
+
+<script>
+    function loadFeed() {
+        fetch('/api/posts')
+            .then(res => res.json())
+            .then(posts => {
+                const container = document.getElementById('feed-container');
+                container.innerHTML = posts.map(post => `
+                    <div class="card modern-card shadow-sm mb-3 text-start">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${post.author_email}" class="rounded-circle me-2" width="40">
+                                <div>
+                                    <a href="/profile-page?email={{ email }}&view_email=${post.author_email}" class="fw-bold text-decoration-none">${post.author_email.split('@')[0]}</a>
+                                    <div class="text-muted small">${new Date(post.created_at).toLocaleString()}</div>
+                                </div>
+                                <span class="badge bg-primary-subtle text-primary ms-auto">${post.category}</span>
+                            </div>
+                            <p class="mb-0">${post.content}</p>
+                            <hr>
+                            <a href="/messages-page?email={{ email }}&start_with=${post.author_email}" class="btn btn-link btn-sm p-0 text-decoration-none">
+                                <i class="bi bi-chat-dots"></i> Reply Privately
+                            </a>
+                        </div>
+                    </div>
+                `).join('');
+            });
+    }
+    document.addEventListener('DOMContentLoaded', loadFeed);
+</script>
+{% endblock %}

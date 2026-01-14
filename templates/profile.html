@@ -1,122 +1,283 @@
 {% extends "base.html" %}
 
-{% block title %}SkillSwap - Profile{% endblock %}
+{% block title %}SkillSwap - {{ view_email }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-img-container {
+        position: relative;
+        display: inline-block;
+    }
+    .profile-img {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border: 5px solid white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .skill-badge {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .bio-text {
+        line-height: 1.6;
+        color: #4b5563;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">My Profile</h2>
-
-<div class="row">
-    <!-- Add Skills Form -->
+<div class="row g-4">
     <div class="col-md-4">
-        <div class="card shadow mb-4">
+        <div class="card modern-card shadow-sm text-center p-4">
+            <div class="profile-img-container mb-3">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ view_email }}" 
+                     class="rounded-circle profile-img" alt="User Avatar">
+            </div>
+            
+            <h3 class="fw-bold mb-1" id="disp-name">Loading...</h3>
+            <p class="text-muted small mb-3">{{ view_email }}</p>
+            
+            <div class="d-flex justify-content-center gap-3 fs-4 mb-4">
+                <a id="link-li" href="#" target="_blank" class="text-primary d-none"><i class="bi bi-linkedin"></i></a>
+                <a id="link-gh" href="#" target="_blank" class="text-dark d-none"><i class="bi bi-github"></i></a>
+            </div>
+            
+            <div class="d-grid gap-2">
+                {% if is_owner %}
+                    <button class="btn btn-modern btn-sm py-2" data-bs-toggle="modal" data-bs-target="#editBioModal">
+                        <i class="bi bi-pencil-square me-2"></i>Edit My Profile
+                    </button>
+                {% else %}
+                    <button class="btn btn-warning btn-sm py-2" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                        <i class="bi bi-calendar-check me-2"></i>Book a Lesson
+                    </button>
+                    <a href="/messages-page?email={{ email }}&start_with={{ view_email }}" class="btn btn-primary btn-sm py-2">
+                        <i class="bi bi-chat-left-dots me-2"></i>Send Message
+                    </a>
+                    <button onclick="startVideoCall('{{ view_email }}', document.getElementById('disp-name').innerText)" 
+                            class="btn btn-outline-success btn-sm py-2">
+                        <i class="bi bi-camera-video me-2"></i>Request Video Call
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if is_owner %}
+        <div class="card modern-card shadow-sm border-0 mt-4 bg-light">
             <div class="card-body">
-                <h5 class="card-title">Add Skills</h5>
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-plus-circle me-2"></i>Add New Skill</h6>
                 <form method="post" action="/add-skill-frontend">
                     <input type="hidden" name="email" value="{{ email }}">
                     
                     <div class="mb-3">
-                        <label class="form-label">Skill Type</label>
-                        <select name="skill_type" class="form-select" required>
-                            <option value="offer">I can teach this</option>
-                            <option value="request">I want to learn this</option>
+                        <select name="skill_type" class="form-select form-select-sm" required>
+                            <option value="offer">I can teach</option>
+                            <option value="request">I want to learn</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Skill Name</label>
-                        <input type="text" name="skill_name" class="form-control" 
-                               placeholder="e.g., Python, Guitar" required>
+                        <input type="text" name="skill_name" class="form-control form-control-sm" placeholder="Skill Name (e.g. Python)" required>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Skill Level</label>
-                        <select name="skill_level" class="form-select">
+                        <select name="skill_level" class="form-select form-select-sm">
                             <option value="beginner">Beginner</option>
                             <option value="intermediate" selected>Intermediate</option>
                             <option value="expert">Expert</option>
                         </select>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control" 
-                                  placeholder="What do you want to learn?" rows="2"></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">Add Skill</button>
+                    <button type="submit" class="btn btn-primary btn-sm w-100 shadow-sm">Save Skill</button>
                 </form>
             </div>
         </div>
+        {% endif %}
     </div>
 
-    <!-- Skills Display -->
     <div class="col-md-8">
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card shadow h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Skills I Can Teach</h5>
-                        <div id="offered-skills" class="mt-3">
-                            <div class="text-center">
-                                <div class="spinner-border spinner-border-sm"></div> Loading...
-                            </div>
-                        </div>
-                    </div>
+        <div class="card modern-card shadow-sm p-4 mb-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-2 me-3">
+                    <i class="bi bi-person-badge fs-4"></i>
                 </div>
+                <h5 class="fw-bold mb-0">Professional Bio</h5>
+            </div>
+            <p id="disp-about" class="bio-text" style="white-space: pre-wrap;">Loading bio details...</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center mb-3 text-success">
+                    <i class="bi bi-mortarboard-fill me-2 fs-5"></i>
+                    <h6 class="fw-bold text-uppercase mb-0">I can Teach</h6>
+                </div>
+                <div id="offered-skills"></div>
             </div>
             
-            <div class="col-md-6 mb-4">
-                <div class="card shadow h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">Skills I Want to Learn</h5>
-                        <div id="needed-skills" class="mt-3">
-                            <div class="text-center">
-                                <div class="spinner-border spinner-border-sm"></div> Loading...
-                            </div>
-                        </div>
-                    </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-center mb-3 text-info">
+                    <i class="bi bi-book-half me-2 fs-5"></i>
+                    <h6 class="fw-bold text-uppercase mb-0">I want to Learn</h6>
                 </div>
+                <div id="needed-skills"></div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    // Load user skills
-    const email = "{{ email }}";
-    
-    fetch(`/users/${email}`)
-        .then(response => response.json())
-        .then(user => {
-            // Display offered skills
-            const offeredDiv = document.getElementById('offered-skills');
-            if (user.skills_offered && user.skills_offered.length > 0) {
-                offeredDiv.innerHTML = user.skills_offered.map(skill => 
-                    `<div class="alert alert-info mb-2">
-                        <strong>${skill.skill_name}</strong> (${skill.skill_level})
-                    </div>`
-                ).join('');
-            } else {
-                offeredDiv.innerHTML = '<p class="text-muted">No skills added yet</p>';
-            }
+{% if is_owner %}
+<div class="modal fade" id="editBioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form action="/users/{{ email }}/update" method="post">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold">Update Profile Info</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Display Name</label>
+                        <input type="text" name="name" id="edit-name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Personal Bio</label>
+                        <textarea name="about" id="edit-about" class="form-control" rows="5" placeholder="Share your experience and learning goals..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">LinkedIn URL</label>
+                            <input type="url" name="linkedin" id="edit-li" class="form-control" placeholder="https://linkedin.com/in/...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label small fw-bold">GitHub URL</label>
+                            <input type="url" name="github" id="edit-gh" class="form-control" placeholder="https://github.com/...">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">Update Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
-            // Display needed skills
-            const neededDiv = document.getElementById('needed-skills');
-            if (user.skills_needed && user.skills_needed.length > 0) {
-                neededDiv.innerHTML = user.skills_needed.map(skill => 
-                    `<div class="alert alert-warning mb-2">
-                        <strong>${skill.skill_name}</strong><br>
-                        <small>${skill.description || 'No description'}</small>
-                    </div>`
-                ).join('');
-            } else {
-                neededDiv.innerHTML = '<p class="text-muted">No skills requested yet</p>';
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Use the variable injected by the Python backend directly
+        // This is 100% specific to the user being viewed
+        const targetProfile = "{{ view_email }}"; 
+        
+        console.log("Loading profile for:", targetProfile);
+
+        if (!targetProfile || targetProfile === "None") {
+            document.getElementById('disp-name').innerText = "User Not Found";
+            return;
+        }
+
+        fetch(`/users/${encodeURIComponent(targetProfile)}`)
+            .then(res => res.json())
+            .then(user => {
+                updateSocialUI('link-li', 'edit-li', user.linkedin_url);
+updateSocialUI('link-gh', 'edit-gh', user.github_url);
+                // If name is missing in DB, use the email prefix
+                const emailPrefix = targetProfile.split('@')[0];
+                const finalName = (user.name && user.name.trim() !== "") ? user.name : emailPrefix;
+
+                // Update the UI with the MATCHED USER'S info
+                document.getElementById('disp-name').innerText = finalName;
+                document.getElementById('disp-about').innerText = user.about || "This user hasn't added a bio yet.";
+
+                // Pre-fill modal ONLY IF it exists (is_owner check)
+                const nameInput = document.getElementById('edit-name');
+                if (nameInput) {
+                    nameInput.value = user.name || emailPrefix;
+                    document.getElementById('edit-about').value = user.about || "";
+                }
+
+                renderSkills('offered-skills', user.skills_offered, 'success');
+                renderSkills('needed-skills', user.skills_needed, 'info');
+            });
+    });
+
+    function renderSkills(containerId, skills, themeColor) {
+        const container = document.getElementById(containerId);
+        if (!skills || skills.length === 0) {
+            container.innerHTML = '<p class="text-muted small italic text-start">No skills listed yet.</p>';
+            return;
+        }
+        container.innerHTML = skills.map(s => `
+            <div class="card border-0 shadow-sm mb-2 p-3 bg-white text-start">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-dark">${s.skill_name}</span>
+                    <span class="badge bg-${themeColor}-subtle text-${themeColor} border rounded-pill small">
+                        ${s.skill_level || 'Intermediate'}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    }
+    function updateSocialUI(iconId, inputId, url) {
+        const iconLink = document.getElementById(iconId);
+        const modalInput = document.getElementById(inputId);
+
+        // If there is a URL in the database
+        if (url && url.trim() !== "") {
+            if (iconLink) {
+                iconLink.href = url;
+                iconLink.classList.remove('d-none'); // Show the icon
+                iconLink.style.display = "inline-block"; // Ensure it's visible
             }
-        })
-        .catch(error => {
-            console.error('Error loading skills:', error);
-            document.getElementById('offered-skills').innerHTML = '<p class="text-danger">Error loading skills</p>';
-            document.getElementById('needed-skills').innerHTML = '<p class="text-danger">Error loading skills</p>';
-        });
+        } else {
+            // If no URL, hide the icon
+            if (iconLink) iconLink.classList.add('d-none');
+        }
+
+        // Always fill the modal input if we are the owner so we can edit it
+        if (modalInput) {
+            modalInput.value = url || "";
+        }
+    }
 </script>
+
+<div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/api/bookings/request" method="post">
+                <input type="hidden" name="learner_email" value="{{ email }}">
+                <input type="hidden" name="teacher_email" value="{{ view_email }}">
+                
+                <div class="modal-header">
+                    <h5 class="modal-title">Schedule a Swap</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">What do you want to learn?</label>
+                        <input type="text" name="skill_name" class="form-control" placeholder="e.g. Python Basics" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Time</label>
+                            <input type="time" name="time" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary w-100">Send Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
+

@@ -8,9 +8,10 @@ import models
 import schemas
 import crud
 from auth import verify_password
-from typing import Optional
+from typing import List, Optional
 import time
 import secrets
+
 
 
 # Create database tables
@@ -32,10 +33,46 @@ def get_db():
         db.close()
 
 # ========== FRONTEND ROUTES ==========
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # This runs when the app starts
+    db = database.SessionLocal()
+    try:
+        # 1. Force create all tables (including the new ones)
+        models.Base.metadata.create_all(bind=database.engine)
+        
+        # 2. Setup initial groups
+        existing = db.query(models.GroupChat).first()
+        if not existing:
+            groups = [
+                models.GroupChat(name="Python & Coding", description="Discussion for tech learners"),
+                models.GroupChat(name="Language Exchange", description="Practice speaking different languages"),
+                models.GroupChat(name="Music & Arts", description="Share your creative progress")
+            ]
+            db.add_all(groups)
+            db.commit()
+    except Exception as e:
+        print(f"Error during startup: {e}")
+    finally:
+        db.close()
+    
+    yield
+    # This runs when the app shuts down
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def home_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+@app.get("/dashboard-page")
+def dashboard_page(request: Request, email: str):
+    return templates.TemplateResponse("dashboard.html", {"request": request, "email": email})
+
+@app.get("/api/bookings")
+def get_bookings_api(email: str, db: Session = Depends(get_db)):
+    return crud.get_user_bookings(db, email)
 
 @app.get("/login-page")
 def login_page(request: Request):
@@ -46,10 +83,20 @@ def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 @app.get("/profile-page")
-def profile_page(request: Request, email: Optional[str] = None):
-    if not email:
-        return RedirectResponse("/login-page")
-    return templates.TemplateResponse("profile.html", {"request": request, "email": email})
+def profile_page(request: Request, email: Optional[str] = None, view_email: Optional[str] = None):
+    # Determine who we are looking at
+    # If view_email is missing, we are looking at our own profile
+    target = view_email if view_email else email
+    
+    # Crucial: Is the logged in user the same as the profile owner?
+    is_owner = (email == target)
+    
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "email": email,         # The person logged in
+        "view_email": target,   # The person being viewed
+        "is_owner": is_owner    # Enables the "Edit" buttons
+    })
 
 @app.get("/matches-page")
 def matches_page(request: Request, email: Optional[str] = None):
@@ -339,3 +386,100 @@ def get_video_room_info(room_id: str, db: Session = Depends(get_db)):
 def decline_call_endpoint(room_id: str, db: Session = Depends(get_db)):
     crud.decline_video_call(db, room_id)
     return {"message": "Call declined"}
+
+@app.post("/users/{email}/update")
+def update_profile(email: str, name: str = Form(...), about: str = Form(None), 
+                   linkedin: str = Form(None), github: str = Form(None), twitter: str = Form(None),
+                   db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user: raise HTTPException(status_code=404)
+    user.name = name
+    user.about = about
+    user.linkedin_url = linkedin
+    user.github_url = github
+    user.twitter_url = twitter
+    db.commit()
+    return RedirectResponse(f"/profile-page?email={email}", status_code=303)
+
+# Profile Endpoint for View Only
+@app.get("/profile/{view_email}")
+def view_public_profile(request: Request, view_email: str, email: Optional[str] = None):
+    """
+    view_email: The person whose profile we want to see
+    email: The logged-in user (from the query param)
+    """
+    is_owner = (view_email == email)
+    return templates.TemplateResponse("profile.html", {
+        "request": request, 
+        "email": email,        # Logged-in user for the Navbar
+        "view_email": view_email, # Profile being viewed
+        "is_owner": is_owner   # Toggle for Edit buttons
+    })
+
+# --- FEED ROUTES ---
+
+
+@app.get("/feed-page")
+def feed_page(request: Request, email: str):
+    return templates.TemplateResponse("feed.html", {"request": request, "email": email})
+
+@app.get("/api/posts", response_model=List[schemas.PostResponse])
+def get_all_posts(db: Session = Depends(get_db)):
+    return crud.get_posts(db)
+
+@app.post("/create-post")
+def create_post_route(
+    email: str = Form(...),
+    content: str = Form(...),
+    category: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    post_data = schemas.PostCreate(content=content, category=category)
+    crud.create_post(db, email, post_data)
+    return RedirectResponse(f"/feed-page?email={email}", status_code=303)
+
+# --- GROUP CHAT ROUTES ---
+
+@app.get("/groups-page")
+def groups_page(request: Request, email: str):
+    return templates.TemplateResponse("groups.html", {"request": request, "email": email})
+
+@app.get("/api/groups")
+def get_groups(db: Session = Depends(get_db)):
+    return crud.get_all_groups(db)
+
+@app.get("/api/groups/{group_id}/messages")
+def get_group_chat_messages(group_id: int, db: Session = Depends(get_db)):
+    messages = crud.get_group_messages(db, group_id)
+    # Ensure we return a list, even if it's empty
+    return messages if messages else []
+
+@app.post("/api/groups/{group_id}/send")
+def send_group_message(
+    group_id: int,
+    email: str = Form(...),
+    content: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    crud.create_group_message(db, group_id, email, content)
+    return {"status": "success"}
+
+@app.post("/api/bookings/request")
+def request_booking(
+    learner_email: str = Form(...),
+    teacher_email: str = Form(...),
+    skill_name: str = Form(...),
+    date: str = Form(...),
+    time: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    crud.create_booking(db, learner_email, teacher_email, skill_name, date, time)
+    return RedirectResponse(f"/profile-page?email={learner_email}&view_email={teacher_email}&booked=true", status_code=303)
+
+@app.post("/api/bookings/{booking_id}/update")
+def update_booking_status(booking_id: int, status: str = Form(...), db: Session = Depends(get_db)):
+    booking = db.query(models.Booking).filter(models.Booking.id == booking_id).first()
+    if booking:
+        booking.status = status
+        db.commit()
+    return {"status": "updated"}

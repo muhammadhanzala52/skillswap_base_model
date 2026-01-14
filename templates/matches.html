@@ -48,9 +48,11 @@
                     <p class="card-text">
                         
 
-                        <strong>${match.matched_user.name}</strong> <br>
-                        ${match.their_request || match.their_offer}
-
+                       <a href="/profile-page?email=${userEmail}&view_email=${match.matched_user.email}" 
+       class="fw-bold text-decoration-none">
+        ${match.matched_user.name}
+    </a>(${match.matched_user.email})<br>
+                ${match.their_request || match.their_offer}
                         
                     </p>
                     <div class="mt-3">

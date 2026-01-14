@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row modern-card shadow-sm bg-white overflow-hidden" style="height: 75vh; border-radius: 15px;">
+        
+        <div class="col-md-3 border-end p-0 bg-light">
+            <div class="p-3 border-bottom bg-white">
+                <h5 class="fw-bold mb-0 text-primary">Skill Topics</h5>
+            </div>
+            <div id="group-list" class="list-group list-group-flush overflow-auto" style="height: calc(75vh - 60px);">
+                <div class="text-center p-4">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9 d-flex flex-column p-0">
+            <div id="chat-header" class="p-3 border-bottom bg-white">
+                <h5 class="fw-bold mb-0 text-muted">Select a topic to join the conversation</h5>
+            </div>
+
+            <div id="group-messages" class="flex-grow-1 p-4 overflow-auto bg-white" style="background-image: radial-gradient(#f0f0f0 1px, transparent 1px); background-size: 20px 20px;">
+                <div class="text-center mt-5">
+                    <i class="bi bi-chat-left-dots fs-1 text-light"></i>
+                    <p class="text-muted">Welcome to the Community Chat</p>
+                </div>
+            </div>
+
+            <div class="p-3 border-top bg-light">
+                <form id="group-form" class="d-none">
+                    <div class="input-group">
+                        <input type="text" id="group-input" class="form-control border-0 shadow-sm" placeholder="Type a message..." autocomplete="off">
+                        <button class="btn btn-primary px-4 shadow-sm" type="submit">
+                            <i class="bi bi-send"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const userEmail = "{{ email }}";
+    let activeGroupId = null;
+
+    // 1. Load the Topics from the API
+    function loadGroups() {
+        fetch('/api/groups')
+            .then(res => res.json())
+            .then(groups => {
+                const list = document.getElementById('group-list');
+                list.innerHTML = groups.map(g => `
+                    <button onclick="switchGroup(${g.id}, '${g.name}')" 
+                            class="list-group-item list-group-item-action py-3 border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold"># ${g.name}</h6>
+                            <i class="bi bi-chevron-right small text-muted"></i>
+                        </div>
+                        <small class="text-muted d-block text-truncate">${g.description}</small>
+                    </button>
+                `).join('');
+            });
+    }
+
+    // 2. Switch between different rooms
+    function switchGroup(id, name) {
+        activeGroupId = id;
+        document.getElementById('chat-header').innerHTML = `<h5 class="fw-bold mb-0 text-primary"># ${name}</h5>`;
+        document.getElementById('group-form').classList.remove('d-none');
+        
+        // Remove active class from others and add to current
+        document.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        
+        loadMessages();
+    }
+
+    // 3. Fetch messages for the active group
+    function loadMessages() {
+        if (!activeGroupId) return;
+        fetch(`/api/groups/${activeGroupId}/messages`)
+            .then(res => res.json())
+            .then(messages => {
+                const container = document.getElementById('group-messages');
+                container.innerHTML = messages.length > 0 ? messages.map(m => `
+                    <div class="mb-3 ${m.sender_email === userEmail ? 'text-end' : 'text-start'}">
+                        <div class="small fw-bold mb-1" style="font-size: 0.75rem; color: #6c757d;">
+                            ${m.sender_email === userEmail ? 'You' : m.sender_email.split('@')[0]}
+                        </div>
+                        <div class="d-inline-block p-3 rounded-4 shadow-sm" 
+                             style="max-width: 75%; ${m.sender_email === userEmail ? 'background: #007bff; color: white;' : 'background: #f1f3f5; color: #212529;'}">
+                            ${m.content}
+                        </div>
+                        <div class="text-muted" style="font-size: 0.65rem; margin-top: 4px;">
+                            ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </div>
+                    </div>
+                `).join('') : '<div class="text-center text-muted mt-5 italic">No messages yet. Be the first to speak!</div>';
+                
+                // Always scroll to the bottom
+                container.scrollTop = container.scrollHeight;
+            });
+    }
+
+    // 4. Send a new message
+    document.getElementById('group-form').onsubmit = function(e) {
+        e.preventDefault();
+        const input = document.getElementById('group-input');
+        const content = input.value.trim();
+        if (!content) return;
+
+        const formData = new FormData();
+        formData.append('email', userEmail);
+        formData.append('content', content);
+
+        fetch(`/api/groups/${activeGroupId}/send`, {
+            method: 'POST',
+            body: formData
+        }).then(() => {
+            input.value = '';
+            loadMessages(); // Refresh immediately
+        });
+    };
+
+    // Initialize & Refresh
+    document.addEventListener('DOMContentLoaded', loadGroups);
+    setInterval(loadMessages, 3000); // Polling for new messages every 3 seconds
+</script>
+
+<style>
+    .list-group-item.active {
+        background-color: #e7f1ff !important;
+        color: #007bff !important;
+        border-left: 4px solid #007bff !important;
+    }
+    .rounded-4 { border-radius: 1.2rem !important; }
+</style>
+{% endblock %}

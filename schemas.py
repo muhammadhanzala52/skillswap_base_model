@@ -44,10 +44,21 @@ class SkillRequestResponse(BaseModel):
         from_attributes = True
 
 # Extended user response with skills
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    about: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+    twitter_url: Optional[str] = None
 class UserWithSkillsResponse(BaseModel):
     id: int
     name: str
     email: str
+    about: Optional[str]
+    profile_photo: Optional[str]
+    linkedin_url: Optional[str]
+    github_url: Optional[str]
+    twitter_url: Optional[str]
     skills_offered: List[SkillOfferResponse] = []
     skills_needed: List[SkillRequestResponse] = []
 
@@ -93,6 +104,39 @@ class VideoSessionResponse(BaseModel):
     meeting_url: str
     status: str
     created_at: datetime
+
+# Feed Schemas
+class PostCreate(BaseModel):
+    content: str
+    category: str
+
+class PostResponse(BaseModel):
+    id: int
+    author_email: str
+    content: str
+    category: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Group Chat Schemas
+class GroupMessageCreate(BaseModel):
+    content: str
+
+class GroupMessageResponse(BaseModel):
+    id: int
+    sender_email: str
+    content: str
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+class GroupChatResponse(BaseModel):
+    id: int
+    name: str
+    description: str
     
     class Config:
         from_attributes = True

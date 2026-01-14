@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="fw-bold mb-4">🗓️ My Learning Schedule</h2>
+
+    <div class="card modern-card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom-0 pt-3">
+            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="teaching-tab" data-bs-toggle="pill" data-bs-target="#teaching" type="button">Requests to Teach</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="learning-tab" data-bs-toggle="pill" data-bs-target="#learning" type="button">My Learning Sessions</button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-content" id="pills-tabContent">
+                <div class="tab-pane fade show active" id="teaching" role="tabpanel">
+                    <div id="teaching-list" class="row">
+                        </div>
+                </div>
+
+                <div class="tab-pane fade" id="learning" role="tabpanel">
+                    <div id="learning-list" class="row">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const userEmail = "{{ email }}";
+
+    function loadBookings() {
+        fetch(`/api/bookings?email=${userEmail}`)
+            .then(res => res.json())
+            .then(bookings => {
+                const teachingList = document.getElementById('teaching-list');
+                const learningList = document.getElementById('learning-list');
+                
+                let teachingHTML = '';
+                let learningHTML = '';
+
+                bookings.forEach(b => {
+                    const card = `
+                        <div class="col-md-6 mb-3">
+                            <div class="card border shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h6 class="fw-bold text-primary">${b.skill_name}</h6>
+                                        <span class="badge ${getStatusBadge(b.status)}">${b.status.toUpperCase()}</span>
+                                    </div>
+                                    <p class="small mb-1"><i class="bi bi-calendar-event me-2"></i>${b.session_date} at ${b.session_time}</p>
+                                    <p class="small mb-2"><i class="bi bi-person me-2"></i>${b.teacher_email === userEmail ? 'Learner: ' + b.learner_email : 'Teacher: ' + b.teacher_email}</p>
+                                    
+                                    ${b.teacher_email === userEmail && b.status === 'pending' ? `
+                                        <div class="mt-3">
+                                            <button onclick="updateStatus(${b.id}, 'accepted')" class="btn btn-success btn-sm me-2">Accept</button>
+                                            <button onclick="updateStatus(${b.id}, 'declined')" class="btn btn-outline-danger btn-sm">Decline</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    if (b.teacher_email === userEmail) teachingHTML += card;
+                    else learningHTML += card;
+                });
+
+                teachingList.innerHTML = teachingHTML || '<p class="text-muted">No teaching requests yet.</p>';
+                learningList.innerHTML = learningHTML || '<p class="text-muted">No learning sessions booked yet.</p>';
+            });
+    }
+
+    function getStatusBadge(status) {
+        if (status === 'accepted') return 'bg-success';
+        if (status === 'declined') return 'bg-danger';
+        return 'bg-warning text-dark';
+    }
+
+    function updateStatus(id, newStatus) {
+        const formData = new FormData();
+        formData.append('status', newStatus);
+
+        fetch(`/api/bookings/${id}/update`, {
+            method: 'POST',
+            body: formData
+        }).then(() => loadBookings());
+    }
+
+    document.addEventListener('DOMContentLoaded', loadBookings);
+</script>
+{% endblock %}

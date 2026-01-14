@@ -308,3 +308,55 @@ def decline_video_call(db: Session, room_id: str):
         session.status = "declined"
         db.commit()
     return session
+
+# --- Feed Logic ---
+def create_post(db: Session, email: str, post: schemas.PostCreate):
+    db_post = models.Post(
+        author_email=email,
+        content=post.content,
+        category=post.category
+    )
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
+def get_posts(db: Session, skip: int = 0, limit: int = 50):
+    return db.query(models.Post).order_by(models.Post.created_at.desc()).offset(skip).limit(limit).all()
+
+# --- Group Chat Logic ---
+def get_all_groups(db: Session):
+    return db.query(models.GroupChat).all()
+
+def get_group_messages(db: Session, group_id: int):
+    messages = db.query(models.GroupMessage).filter(models.GroupMessage.group_id == group_id).all()
+    return messages if messages else []
+def create_group_message(db: Session, group_id: int, email: str, content: str):
+    db_msg = models.GroupMessage(
+        group_id=group_id,
+        sender_email=email,
+        content=content
+    )
+    db.add(db_msg)
+    db.commit()
+    db.refresh(db_msg)
+    return db_msg
+
+def create_booking(db: Session, learner: str, teacher: str, skill: str, date: str, time: str):
+    new_booking = models.Booking(
+        learner_email=learner,
+        teacher_email=teacher,
+        skill_name=skill,
+        session_date=date,
+        session_time=time
+    )
+    db.add(new_booking)
+    db.commit()
+    return new_booking
+
+def get_user_bookings(db: Session, email: str):
+    # Get bookings where user is either the teacher or the learner
+    return db.query(models.Booking).filter(
+        (models.Booking.learner_email == email) | 
+        (models.Booking.teacher_email == email)
+    ).order_by(models.Booking.session_date.asc()).all()
